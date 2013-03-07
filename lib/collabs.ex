@@ -1,0 +1,2 @@
+defmodule Collabs do
+end
