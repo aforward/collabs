@@ -1,4 +1,4 @@
 collabs
 =======
 
-A mapreduce sample program written in Elixir
+A mapreduce sample program written in Elixir.
