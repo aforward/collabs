@@ -7,19 +7,10 @@ defmodule Collabs.CLI do
   the various functions that end up generating a 
   table of the last _n_ issues in a github project
   """
-
   def run(argv) do
     argv
     |> parse_args
     |> process
-  end
-
-  def uottawa do
-    run([
-      "http://www.informatik.uni-trier.de/~ley/pers/xx/l/Lethbridge:Timothy",
-      "http://www.informatik.uni-trier.de/~ley/pers/xx/a/Amyot:Daniel",
-      "http://www.informatik.uni-trier.de/~ley/pers/xx/f/Forward:Andrew",
-      ])
   end
 
   @doc """
@@ -30,12 +21,13 @@ defmodule Collabs.CLI do
   [ [ author1, author2, ...], ... ] 
   """
   def parse_args(argv) do
-    parse = OptionParser.parse(argv, switches: [ help: :boolean],
-                                     aliases:  [ h:    :help   ])
+    parse = OptionParser.parse(argv, switches: [ help: :boolean, uottawa: :boolean],
+                                     aliases:  [ h:    :help , o: :uottawa  ])
     case  parse  do
-      { [ help: true ], _ }           -> :help
-      { _ , urls }                    -> urls
-      _                               -> :help
+      { [ help: true, uottawa: _ ], _ }           -> :help
+      { [ uottawa: true, help: false ], _ }       -> :uottawa
+      { _ , urls }                                -> { :informatik,  urls }
+      _                                           -> :help
     end
   end
 
@@ -46,19 +38,33 @@ defmodule Collabs.CLI do
    System.halt(0)
   end
 
-  def process(urls), do: process(urls,[])
+  def process(:uottawa) do
+    IO.puts "Processing UOttawa Professors"
+    a = Collabs.Publication.fetch("http://www.eecs.uottawa.ca/professors")
+    a = decode_response a, :professors
+    a = Collabs.Publication.professor_biblio a
+    a = Collabs.Publication.fetch a
+    a = decode_response a, :authors
+    MapReduce.go a, JointAuthors
+  end
+
+
+  def process({ :informatik,  urls }), do: process(urls,[])
   def process([url|tail],results), do: process(tail, process_url(url) ++ results)
   def process([],results), do: MapReduce.go results, JointAuthors
 
-  def decode_response({:ok, body}), do: Collabs.Publication.decode(body)
-  def decode_response({:error, msg}) do
+  def decode_response([],_), do: []
+  def decode_response([head|tail],mode), do: decode_response(head,mode) ++ decode_response(tail,mode)
+  def decode_response({:ok, body},:authors), do: Collabs.Publication.decode_authors(body)
+  def decode_response({:ok, body},:professors), do: Collabs.Publication.decode_professors(body)
+  def decode_response({:error, msg}, _) do
     IO.puts "Error fetching data: #{msg}"
     System.halt(2)    
   end
 
   def process_url(url) do
     Collabs.Publication.fetch(url)
-    |> decode_response
+    |> decode_response :authors
   end
 
 

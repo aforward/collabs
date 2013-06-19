@@ -10,15 +10,32 @@ defmodule CollabsTest do
   end
 
   test "one values returned if one given" do
-    assert parse_args(["http://hello.com"]) == { "http://hello.com" }
+    assert parse_args(["http://hello.com"]) == {:informatik,["http://hello.com"]}
   end
 
-  test "decode: handle nil" do
-    assert decode(nil) == []
+  test "decode_authors: handle nil" do
+    assert decode_authors(nil) == []
   end
 
-  test "decode: grab after target" do
-    assert decode("<r key=\"journals/ijsi/FatolahiSL12\" mdate=\"2013-01-30\"><author>Ali Fatolahi</author><author>Stephane S. Some</author><author>Timothy C. Lethbridge</author></r><r blah><author>Timothy C. Lethbridge</author></r>") == [["Ali Fatolahi","Stephane S. Some","Timothy C. Lethbridge"],["Timothy C. Lethbridge"]]
+  test "decode_authors: grab after target" do
+    assert decode_authors("<r key=\"journals/ijsi/FatolahiSL12\" mdate=\"2013-01-30\"><author>Ali Fatolahi</author><author>Stephane S. Some</author><author>Timothy C. Lethbridge</author></r><r blah><author>Timothy C. Lethbridge</author></r>") == [["Ali Fatolahi","Stephane S. Some","Timothy C. Lethbridge"],["Timothy C. Lethbridge"]]
+  end
+
+
+  test "decode_professors: handle nil" do
+    assert decode_professors(nil) == []
+  end
+
+  test "people: grab the people" do
+    input = """
+      blah<a href="http://www.eecs.uottawa.ca/matwin-stan">Matwin, Stan</a>blah
+      <a href="http://www.eecs.uottawa.ca/lethbridge-tim">Lethbridge, Tim</a>blah    
+    """
+    assert decode_professors(input) == [ {"Stan","Matwin"}, {"Tim", "Lethbridge"} ]
+  end
+
+  test "professor_biblio" do
+    assert professor_biblio({"Stan","Matwin"}) == "http://www.informatik.uni-trier.de/~ley/pers/xx/m/Matwin:Stan"
   end
 
 
